@@ -24,7 +24,7 @@ const Login = ({ onLogin }) => {
     setError('');
     try {
       const { email, password } = formData; // Only extract needed fields
-      const res = await axios.post('https://rentitcamerasbackend.onrender.com//api/login', { email, password });
+      const res = await axios.post('https://rentitcamerasbackend.onrender.com/api/login', { email, password });
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       onLogin(res.data.user);
