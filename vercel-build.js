@@ -1,25 +1,28 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 
-console.log('Starting custom build process...');
+console.log('Starting Vercel build process...');
 
+// Ensure node_modules/.bin has correct permissions
 try {
+  console.log('Setting up environment...');
+  
   // Install dependencies
   console.log('Installing dependencies...');
   execSync('npm install', { stdio: 'inherit' });
-
-  // Ensure Vite binary has execute permissions
-  console.log('Setting up Vite...');
-  try {
-    execSync('chmod +x node_modules/.bin/vite', { stdio: 'inherit' });
-  } catch (error) {
-    console.log('Warning: Could not set Vite permissions, continuing...');
-  }
-
-  // Run build
+  
+  // Create a custom Vite runner script
+  console.log('Creating Vite runner...');
+  const viteRunner = `#!/usr/bin/env node
+require('vite/bin/vite');
+`;
+  
+  fs.writeFileSync('node_modules/.vite-runner.js', viteRunner);
+  
+  // Run the build
   console.log('Running build...');
-  execSync('npx vite build', { stdio: 'inherit' });
-
+  execSync('node node_modules/vite/bin/vite.js build', { stdio: 'inherit' });
+  
   console.log('Build completed successfully!');
   process.exit(0);
 } catch (error) {
