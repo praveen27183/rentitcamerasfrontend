@@ -4,6 +4,13 @@ import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import dns from 'dns';
+
+// Fix Node.js 17+ and Windows DNS resolution issues
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
+
 dotenv.config();
 
 const app = express();
@@ -14,12 +21,22 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017');
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+
+// We wrap the connection to prevent crashing the whole app if Atlas is offline
+mongoose.connect(MONGODB_URI, {
+  serverSelectionTimeoutMS: 5000,
+})
+.then(() => console.log('✅ Connected to MongoDB Atlas'))
+.catch(err => {
+  console.error('❌ MongoDB connection error:', err.message);
+  console.log('💡 Note: The server is still running with mock data fallback.');
+});
 
 const db = mongoose.connection;
-db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-db.once('open', () => {
-  console.log('Connected to MongoDB Atlas');
+db.on('error', (err) => {
+  console.error('MongoDB runtime error:', err.message);
 });
 
 // User Schema
@@ -356,11 +373,12 @@ app.delete('/api/admin/products/:id', authenticateToken, requireAdmin, async (re
 // Get all categories
 app.get('/api/category', async (req, res) => {
   try {
-    // Get unique categories from products
+    if (mongoose.connection.readyState !== 1) {
+      return res.json(['Cameras', 'Lens', 'Tripod', 'Mic', 'Drone', 'Accessories']);
+    }
     const category = await Product.distinct('category');
     res.json(category);
   } catch (error) {
-    console.error('Error fetching categories:', error);
     res.status(500).json({ message: 'Error fetching categories', error: error.message });
   }
 });
@@ -370,6 +388,35 @@ app.get('/api/category', async (req, res) => {
 // Get all available products (for clients)
 app.get('/api/products', async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      console.log('📡 MongoDB not connected, returning mock data for development...');
+      return res.json([
+        {
+          _id: "mock1",
+          name: "Sony A7 IV (Mock)",
+          description: "Professional mirrorless camera (Mock Data)",
+          price: 2500,
+          category: "cameras",
+          brand: "Sony",
+          imageUrl: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32",
+          stock: 5,
+          isAvailable: true,
+          location: "Anna Nagar"
+        },
+        {
+          _id: "mock2",
+          name: "Canon EOS R5 (Mock)",
+          description: "High-resolution mirrorless camera (Mock Data)",
+          price: 3000,
+          category: "cameras",
+          brand: "Canon",
+          imageUrl: "https://images.unsplash.com/photo-1510127034890-ba27508e9f1c",
+          stock: 3,
+          isAvailable: true,
+          location: "KK Nagar"
+        }
+      ]);
+    }
     const products = await Product.find({ isAvailable: true }).sort({ createdAt: -1 });
     res.json(products);
   } catch (error) {

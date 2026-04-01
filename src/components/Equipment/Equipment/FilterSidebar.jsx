@@ -282,8 +282,8 @@ const FilterSidebar = ({
                 max={MAX}
                 values={localPriceRange}
                 onChange={handleRangeChange}
-                renderTrack={({ props, children }) => (
-                  <div {...props} className="h-2 w-full bg-gray-200 rounded-full relative">
+                renderTrack={({ props: { key, ...trackProps }, children }) => (
+                  <div key={key} {...trackProps} className="h-2 w-full bg-gray-200 rounded-full relative">
                     <div
                       className="h-2 bg-[#1A97A9] rounded-full absolute transition-all duration-300"
                       style={{
@@ -294,9 +294,10 @@ const FilterSidebar = ({
                     {children}
                   </div>
                 )}
-                renderThumb={({ props }) => (
+                renderThumb={({ props: { key, ...thumbProps } }) => (
                   <div
-                    {...props}
+                    key={key}
+                    {...thumbProps}
                     className="h-5 w-5 bg-white rounded-full border-2 border-[#1A97A9] shadow-md flex items-center justify-center cursor-pointer"
                   >
                     <div className="h-2 w-2 bg-[#1A97A9] rounded-full" />
