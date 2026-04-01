@@ -1,75 +1,95 @@
-import React, { useEffect } from "react";
+import React, { useCallback } from "react";
+import Particles from "react-tsparticles";
+import { loadSlim } from "tsparticles-slim";
 
 const ParticlesComponent = ({ textColor = "white" }) => {
-  useEffect(() => {
-    const loadScript = (src) =>
-      new Promise((resolve) => {
-        const script = document.createElement("script");
-        script.src = src;
-        script.onload = resolve;
-        document.body.appendChild(script);
-      });
+  const particlesInit = useCallback(async (engine) => {
+    await loadSlim(engine);
+  }, []);
 
-    loadScript("https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js").then(() => {
-      window.particlesJS("particles-js", {
-        particles: {
-          number: { value: 80, density: { enable: true, value_area: 800 } },
-          color: { value: "#ffffff" },
-          shape: {
-            type: "circle",
-            stroke: { width: 0, color: "#ffffff" },
-            polygon: { nb_sides: 5 }
-          },
-          opacity: {
-            value: 0.5,
-            random: false
-          },
-          size: {
-            value: 3,
-            random: true
-          },
-          line_linked: {
-            enable: true,
-            distance: 300, // 👈 updated distance
-            color: "#ffffff",
-            opacity: 0.4,
-            width: 1
-          },
-          move: {
-            enable: true,
-            speed: 4,
-            direction: "none",
-            out_mode: "out"
-          }
-        },
-        interactivity: {
-          detect_on: "window",
-          events: {
-            onhover: { enable: true, mode: "repulse" },
-            onclick: { enable: true, mode: "bubble" },
-            resize: true
-          },
-          modes: {
-            repulse: { distance: 200, duration: 0.4 },
-            bubble: {
-              distance: 300,
-              size: 10,
-              duration: 2,
-              opacity: 0.8,
-              speed: 3
-            }
-          }
-        },
-        retina_detect: true
-      });
-    });
+  const particlesLoaded = useCallback(async (container) => {
+    // console.log(container);
   }, []);
 
   return (
     <>
-      <div id="particles-js" style={styles.particles}></div>
+      <Particles
+        id="tsparticles"
+        init={particlesInit}
+        loaded={particlesLoaded}
+        style={styles.particles}
+        options={{
+          fullScreen: { enable: false },
+          background: {
+            color: {
+              value: "#1A97A9",
+            },
+          },
+          fpsLimit: 120,
+          interactivity: {
+            events: {
+              onClick: {
+                enable: true,
+                mode: "push",
+              },
+              onHover: {
+                enable: true,
+                mode: "repulse",
+              },
+              resize: true,
+            },
+            modes: {
+              push: {
+                quantity: 4,
+              },
+              repulse: {
+                distance: 200,
+                duration: 0.4,
+              },
+            },
+          },
+          particles: {
+            color: {
+              value: "#ffffff",
+            },
+            links: {
+              color: "#ffffff",
+              distance: 150,
+              enable: true,
+              opacity: 0.5,
+              width: 1,
+            },
+            move: {
+              direction: "none",
+              enable: true,
+              outModes: {
+                default: "bounce",
+              },
+              random: false,
+              speed: 2,
+              straight: false,
+            },
+            number: {
+              density: {
+                enable: true,
+                area: 800,
+              },
+              value: 80,
+            },
+            opacity: {
+              value: 0.5,
+            },
+            shape: {
+              type: "circle",
+            },
+            size: {
+              value: { min: 1, max: 5 },
+            },
+          },
+          detectRetina: true,
+        }}
+      />
       <div style={{ ...styles.overlayText, color: textColor }}>
-        
       </div>
     </>
   );
@@ -80,10 +100,6 @@ const styles = {
     position: "fixed",
     width: "100%",
     height: "100%",
-    backgroundColor: "#1A97A9",
-    backgroundRepeat: "no-repeat",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
     zIndex: -1,
   },
   overlayText: {
