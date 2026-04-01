@@ -50,7 +50,7 @@ const collections = [
     items: 12,
     description: "Professional drones for aerial photography and videography",
     icon: <img className="w-8 h-8 filter invert brightness-0" src="https://cdn-icons-png.flaticon.com/128/7504/7504454.png" alt="" />,
-    bg: "https://www.designinfo.in/wp-content/uploads/2025/05/dji-mini-4-pro-plus-3-485x485-optimized.webp",
+    bg: "https://rukminim2.flixcart.com/image/480/480/l3q7jww0/drone/m/v/x/45-34-1-mini-3-pro-rc-lightweight-and-foldable-camera-drone-with-original-images7bhgpwuydh.jpeg?q=90",
   },
   {
     title: "ACTION CAMERAS",
