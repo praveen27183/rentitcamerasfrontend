@@ -9,7 +9,7 @@ import Testimonials from '../Testimonials';
 import StatsBar from './StatsBar';
 import BlogSection from './BlogSection';
 import Footer from './Footer';
-import axios from 'axios';
+import { apiClient } from '../../../utils/apiClient';
 
 const ClientDashboard = ({ onLogout, user }) => {
   const [products, setProducts] = useState([]);
@@ -21,8 +21,8 @@ const ClientDashboard = ({ onLogout, user }) => {
 
   const fetchProducts = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/products');
-      setProducts(response.data);
+      const data = await apiClient.get('/products');
+      setProducts(data);
     } catch (error) {
       console.error('Error fetching products:', error);
     } finally {

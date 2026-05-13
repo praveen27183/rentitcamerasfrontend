@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, Grid3X3, List as ListIcon, Plus, Edit, Trash2, X, Image as ImageIcon 
 } from 'lucide-react';
-import axios from 'axios';
+import { apiClient } from '../../../utils/apiClient';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -31,8 +31,8 @@ const Categories = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const res = await axios.get('/api/categories');
-      setCategories(Array.isArray(res.data) ? res.data : []);
+      const data = await apiClient.get('/categories');
+      setCategories(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching categories:", error);
       setCategories([]); // Ensure categories is always an array
@@ -43,8 +43,8 @@ const Categories = () => {
 
   const fetchBrands = async () => {
     try {
-      const res = await axios.get('/api/brands');
-      setBrands(Array.isArray(res.data) ? res.data : []);
+      const data = await apiClient.get('/brands');
+      setBrands(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error("Error fetching brands:", error);
       setBrands([]); // Ensure brands is always an array
@@ -55,9 +55,9 @@ const Categories = () => {
     e.preventDefault();
     try {
       if (editingCategory) {
-        await axios.put(`/api/categories/${editingCategory._id}`, formData);
+        await apiClient.put(`/categories/${editingCategory._id}`, formData);
       } else {
-        await axios.post('/api/categories', formData);
+        await apiClient.post('/categories', formData);
       }
       fetchCategories();
       setShowAddModal(false);
@@ -70,7 +70,7 @@ const Categories = () => {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this category?")) return;
     try {
-      await axios.delete(`/api/categories/${id}`);
+      await apiClient.delete(`/categories/${id}`);
       fetchCategories();
     } catch (error) {
       console.error("Error deleting category:", error);

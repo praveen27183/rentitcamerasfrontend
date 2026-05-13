@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Grid3X3, List as ListIcon, Package, IndianRupee, Tag } from 'lucide-react';
-import axios from 'axios';
+import { apiClient } from '../../../utils/apiClient';
 
 const ViewProducts = () => {
   const [products, setProducts] = useState([]);
@@ -29,8 +29,8 @@ const ViewProducts = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:5000/api/products');
-      setProducts(response.data);
+      const data = await apiClient.get('/products');
+      setProducts(data);
     } catch (error) {
       console.error('Error fetching products:', error);
       setProducts([

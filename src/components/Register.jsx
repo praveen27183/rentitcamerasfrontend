@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, User, Phone } from 'lucide-react';
-import axios from 'axios';
+import { apiClient } from '../utils/apiClient';
 import { useNavigate } from 'react-router-dom';
 import ParticlesComponent from './ParticleBackground';
 
@@ -52,20 +52,20 @@ const Register = ({ onRegister }) => {
     }
 
     try {
-      const response = await axios.post('http://localhost:5000/api/register', {
+      const data = await apiClient.post('/register', {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
         password: formData.password
       });
 
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
-      onRegister(response.data.user);
+      onRegister(data.user);
 
     } catch (error) {
-      setError(error.response?.data?.message || 'Registration failed. Please try again.');
+      setError(error.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }

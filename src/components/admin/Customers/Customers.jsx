@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Trash2, Search, ChevronDown } from 'lucide-react';
-import axios from 'axios';
+import { apiClient } from '../../../utils/apiClient';
 
 const Customers = ({ orders = [] }) => {
   const [customers, setCustomers] = useState([]);
@@ -12,11 +12,8 @@ const Customers = ({ orders = [] }) => {
     const fetchCustomers = async () => {
       setLoading(true);
       try {
-        const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/admin/customers', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setCustomers(res.data);
+        const data = await apiClient.get('/admin/customers');
+        setCustomers(data);
       } catch (error) {
         console.error('Error fetching customers:', error);
       } finally {
@@ -30,10 +27,7 @@ const Customers = ({ orders = [] }) => {
   const handleDeleteCustomer = async (customerId) => {
     if (window.confirm('Are you sure you want to delete this customer?')) {
       try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:5000/api/admin/customers/${customerId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await apiClient.delete(`/admin/customers/${customerId}`);
         setCustomers(customers.filter(customer => customer._id !== customerId));
       } catch (error) {
         console.error('Error deleting customer:', error);

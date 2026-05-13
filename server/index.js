@@ -1,16 +1,14 @@
+import dns from 'dns';
+
+
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import dns from 'dns';
 
-// Fix Node.js 17+ and Windows DNS resolution issues
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder('ipv4first');
-}
-
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dotenv.config();
 
 const app = express();
@@ -21,10 +19,8 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-// MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 
-// We wrap the connection to prevent crashing the whole app if Atlas is offline
 mongoose.connect(MONGODB_URI, {
   serverSelectionTimeoutMS: 5000,
 })
@@ -54,13 +50,17 @@ const User = mongoose.model('User', userSchema);
 // Product Schema
 const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String, required: false },
   price: { type: Number, required: true },
   category: { type: String, required: true },
   brand: { type: String, required: true },
+  model: { type: String }, // Added to match frontend
+  tags: [{ type: String }], // Added to match frontend
+  location: { type: String }, // Added to match frontend
   imageUrl: { type: String, required: true },
   stock: { type: Number, required: true, default: 0 },
   isAvailable: { type: Boolean, default: true },
+  type: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -244,7 +244,13 @@ app.post('/api/login', async (req, res) => {
 app.get('/api/profile', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId).select('-password');
-    res.json(user);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    // Normalize ID for frontend consistency
+    const userObj = user.toObject();
+    userObj.id = userObj._id;
+    res.json(userObj);
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -312,6 +318,32 @@ app.get('/api/admin/products', authenticateToken, requireAdmin, async (req, res)
   }
 });
 
+// Get admin dashboard stats
+app.get('/api/stats', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const [totalProducts, totalCategories, totalOrders, totalCustomers] = await Promise.all([
+      Product.countDocuments(),
+      Product.distinct('category').then(cats => cats.length),
+      Order.countDocuments(),
+      User.countDocuments({ role: 'client' })
+    ]);
+
+    // Calculate total revenue
+    const orders = await Order.find({ status: 'completed' });
+    const totalRevenue = orders.reduce((sum, order) => sum + order.totalPrice, 0);
+
+    res.json({
+      totalProducts,
+      totalCategories,
+      totalOrders,
+      totalCustomers,
+      totalRevenue
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
 // Add new product (admin only)
 app.post('/api/admin/products', authenticateToken, requireAdmin, async (req, res) => {
   try {
@@ -371,15 +403,31 @@ app.delete('/api/admin/products/:id', authenticateToken, requireAdmin, async (re
 });
 
 // Get all categories
-app.get('/api/category', async (req, res) => {
+app.get('/api/categories', async (req, res) => {
   try {
     if (mongoose.connection.readyState !== 1) {
       return res.json(['Cameras', 'Lens', 'Tripod', 'Mic', 'Drone', 'Accessories']);
     }
-    const category = await Product.distinct('category');
-    res.json(category);
+    const categories = await Product.distinct('category');
+    res.json(categories);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching categories', error: error.message });
+  }
+});
+
+// Alias for backward compatibility
+app.get('/api/category', (req, res) => res.redirect('/api/categories'));
+
+// Get all brands
+app.get('/api/brands', async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.json(['Sony', 'Canon', 'Nikon', 'DJI', 'Rode']);
+    }
+    const brands = await Product.distinct('brand');
+    res.json(brands);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching brands', error: error.message });
   }
 });
 
@@ -419,6 +467,82 @@ app.get('/api/products', async (req, res) => {
     }
     const products = await Product.find({ isAvailable: true }).sort({ createdAt: -1 });
     res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Get single product by ID
+app.get('/api/products/:id', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Create a new order (Public/Client)
+app.post('/api/orders', async (req, res) => {
+  try {
+    const { product, products, rentalStart, rentalEnd, totalPrice, customerDetails } = req.body;
+    
+    // In a real app, we'd get the userId from authenticateToken middleware
+    // For now, if no userId is provided, we can either require login or create a guest order
+    // Let's try to get user from token if it exists, otherwise use a placeholder or handle guest
+    
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    let userId = null;
+
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+        userId = decoded.userId;
+      } catch (err) {
+        // Token invalid, proceed as guest or return error
+      }
+    }
+
+    // If no user found and no guest name provided, return error
+    if (!userId && (!customerDetails || !customerDetails.name)) {
+      return res.status(400).json({ message: 'User identification or customer details required' });
+    }
+
+    // Create a guest user if not logged in (optional logic)
+    // For simplicity, let's assume if they aren't logged in, we use a 'guest' user account or we modify the schema
+    // Since the schema requires an ObjectId, let's find or create a 'Guest' user if not logged in
+    if (!userId) {
+      let guestUser = await User.findOne({ email: 'guest@rentit.com' });
+      if (!guestUser) {
+        guestUser = new User({
+          email: 'guest@rentit.com',
+          password: 'guest-password-not-used',
+          name: 'Guest User',
+          role: 'client'
+        });
+        await guestUser.save();
+      }
+      userId = guestUser._id;
+    }
+
+    // Prepare products array if only one product was sent
+    const orderProducts = products || [{ product: product, quantity: 1 }];
+
+    const order = new Order({
+      user: userId,
+      products: orderProducts,
+      rentalStart: new Date(rentalStart),
+      rentalEnd: new Date(rentalEnd),
+      totalPrice: totalPrice,
+      status: 'pending'
+    });
+
+    await order.save();
+    res.status(201).json({ message: 'Order created successfully', order });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }

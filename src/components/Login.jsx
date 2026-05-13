@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Mail, Lock, Phone } from 'lucide-react';
-import axios from 'axios';
+import { apiClient } from '../utils/apiClient';
 import { useNavigate } from 'react-router-dom';
 import ParticlesComponent from "./ParticleBackground";
 
@@ -24,19 +24,19 @@ const Login = ({ onLogin }) => {
     setError('');
     try {
       const { email, password } = formData; // Only extract needed fields
-      const res = await axios.post('https://rentitcamerasbackend.onrender.com/api/login', { email, password });
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-      onLogin(res.data.user);
+      const data = await apiClient.post('/login', { email, password });
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+      onLogin(data.user);
       
       // Redirect to dashboard after successful login
-      if (res.data.user.role === 'admin') {
+      if (data.user.role === 'admin') {
         navigate('/admin');
       } else {
         navigate('/client');
       }
     } catch (error) {
-      setError(error.response?.data?.message || 'Login failed. Please try again.');
+      setError(error.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }

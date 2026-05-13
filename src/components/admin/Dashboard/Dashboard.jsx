@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
 import { 
   Package, 
   IndianRupee, 
@@ -18,6 +17,7 @@ import {
   RevenueTrendLine, 
   TopProductsBar 
 } from './ProductCharts';
+import { apiClient } from '../../../utils/apiClient';
 
 const Dashboard = ({ 
   stats = {
@@ -62,15 +62,15 @@ const Dashboard = ({
       setError(null);
       
       try {
-        const [productsRes, categoriesRes, statsRes] = await Promise.all([
-          axios.get('/api/products'),
-          axios.get('/api/categories'),
-          axios.get('/api/stats')
+        const [productsData, categoriesData, statsData] = await Promise.all([
+          apiClient.get('/products'),
+          apiClient.get('/categories'),
+          apiClient.get('/stats')
         ]);
         
-        setLocalProducts(productsRes.data);
-        setLocalCategories(categoriesRes.data);
-        setLocalStats(statsRes.data);
+        setLocalProducts(productsData);
+        setLocalCategories(categoriesData);
+        setLocalStats(statsData);
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
         setError('Failed to load dashboard data. Please try again later.');
@@ -143,7 +143,7 @@ const Dashboard = ({
     
     try {
       setIsLoading(true);
-      await axios.delete('/api/products');
+      await apiClient.delete('/products');
       setLocalProducts([]);
       setLocalStats(prev => ({ ...prev, totalProducts: 0 }));
     } catch (err) {
@@ -158,15 +158,15 @@ const Dashboard = ({
     setIsLoading(true);
     setError(null);
     try {
-      const [productsRes, categoriesRes, statsRes] = await Promise.all([
-        axios.get('/api/products'),
-        axios.get('/api/categories'),
-        axios.get('/api/stats')
+      const [productsData, categoriesData, statsData] = await Promise.all([
+        apiClient.get('/products'),
+        apiClient.get('/categories'),
+        apiClient.get('/stats')
       ]);
       
-      setLocalProducts(productsRes.data);
-      setLocalCategories(categoriesRes.data);
-      setLocalStats(statsRes.data);
+      setLocalProducts(productsData);
+      setLocalCategories(categoriesData);
+      setLocalStats(statsData);
     } catch (err) {
       console.error('Failed to refresh data:', err);
       setError('Failed to refresh data. Please try again.');

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { apiClient } from "../../utils/apiClient";
 
 // Category and type constants
 const categories = [
@@ -17,31 +17,29 @@ const categories = [
 ];
 
 const equipmentTypes = [
-  
-  
-  { name: "DSLR Cameras", img: "https://png.pngtree.com/png-clipart/20220827/ourmid/pngtree-camera-dslr-ilustration-png-image_6125620.png", type: "dslr" },
-  { name: "Mirrorless Cameras", img: "https://m.media-amazon.com/images/I/41yE12YddjL._SY300_SX300_QL70_FMwebp_.jpg", type: "mirrorless" },
+  { name: "DSLR", img: "https://png.pngtree.com/png-clipart/20220827/ourmid/pngtree-camera-dslr-ilustration-png-image_6125620.png", type: "DSLR" },
+  { name: "Mirrorless", img: "https://m.media-amazon.com/images/I/41yE12YddjL._SY300_SX300_QL70_FMwebp_.jpg", type: "Mirrorless" },
   { name: "Lens", img: "https://cdn.media.amplience.net/i/canon/27_canon-ef-600mm-f-4l-is-ii-usm_b8444ec598a44604b61d25b438fae05e", type: "lens" },
-  { name: "GoPro Cameras", img: "https://m.media-amazon.com/images/I/31Q8himJ7dL._SX300_SY300_QL70_FMwebp_.jpg", type: "gopro" },
-  { name: "Wildlife Photography", img: "https://m.media-amazon.com/images/I/31a2ZRDvYxL._SX300_SY300_QL70_FMwebp_.jpg", type: "wildlife" },
-  { name: "Insta360 Cameras", img: "https://m.media-amazon.com/images/I/41GBIJSUWyL._SX300_SY300_QL70_FMwebp_.jpg", type: "insta360" }, { name: "support", img: "https://m.media-amazon.com/images/I/61WcJNi4NPL._UF1000,1000_QL80_.jpg", type: "support" },
-  { name: "mic", img: "https://static.vecteezy.com/system/resources/thumbnails/041/450/719/small_2x/ai-generated-black-studio-broadcast-microphone-png.png", type: "mic" },
-  { name: "light", img: "https://media-assets.hyperinvento.com/companies/fa691107-50d8-4f5e-a22d-387262bb0289/products/d2f72b02-ce15-4bc6-83b9-6b39a51d8d44/assetss/files/c353b7a7b5914a92a9a3c065d577160e-product-assets.jpg", type: "light" },
-  { name: "DJI Drones", img: "https://m.media-amazon.com/images/I/31niq9WpYXL._SX300_SY300_QL70_FMwebp_.jpg", type: "drone" }
- 
+  { name: "Action Cam", img: "https://m.media-amazon.com/images/I/31Q8himJ7dL._SX300_SY300_QL70_FMwebp_.jpg", type: "Action" },
+  { name: "Lenses (GM)", img: "https://fotocentreindia.com/wp-content/uploads/Sony-FE-50mm-f1.4-GM-Lens-Online-Buy-in-India_1.jpg", type: "G-Master" },
+  { name: "Tripod", img: "https://m.media-amazon.com/images/I/61WcJNi4NPL._UF1000,1000_QL80_.jpg", type: "Tripod" },
+  { name: "Audio", img: "https://static.vecteezy.com/system/resources/thumbnails/041/450/719/small_2x/ai-generated-black-studio-broadcast-microphone-png.png", type: "Microphone" },
+  { name: "Light", img: "https://media-assets.hyperinvento.com/companies/fa691107-50d8-4f5e-a22d-387262bb0289/products/d2f72b02-ce15-4bc6-83b9-6b39a51d8d44/assetss/files/c353b7a7b5914a92a9a3c065d577160e-product-assets.jpg", type: "light " },
+  { name: "Gimbal", img: "https://www-cdn.djiits.com/dps/217e4161ba59686dd4b0ef051abb3344@origin.png", type: "Gimbal" },
+  { name: "Drone", img: "https://www.freeiconspng.com/uploads/drone-with-camera-white-png-image-3.png", type: "Drone Service" }
 ];
 
 const brandsByType = {
-  dslr: ["Sony", "Canon", "Nikon"],
-  mirrorless: ["Sony", "Canon", "Nikon", "Panasonic", "Fujifilm"],
-  lens:["Sony", "Canon", "Nikon", "Panasonic", "Fujifilm"],
-  gopro: ["GoPro 13", "GoPro 12", "GoPro 11", "GoPro 10", "GoPro Fusion"],
-  insta360: ["Insta360 X3", "Insta360 X2", "Insta360 One RS", "Insta360 One R"],
-  wildlife: ["Sony", "Canon", "Nikon"],
-  drone: ["DJI Nano", "DJI Phantom", "FPV Drone"],
-  support: ["DJI Gimbal", "Tripod", "Monopod", "Stand", "Slider"],
-  mic: ["Hollyland", "Digitek", "Rode"],
-  light: ["Godox","Digitek", "Aputure"] // added common light brands
+  DSLR: ["Sony", "Canon", "Nikon"],
+  Mirrorless: ["Sony", "Canon", "Nikon"],
+  lens: ["Sony", "Canon", "Nikon", "Sigma", "Tamron"],
+  Action: ["GoPro", "Insta360", "DJI"],
+  "G-Master": ["Sony"],
+  Tripod: ["Vanguard", "Digitek", "Manfrotto"],
+  Microphone: ["Rode", "Hollyland", "Digitek"],
+  "light ": ["Godox", "Digitek", "Aputure"],
+  Gimbal: ["DJI", "Zhiyun"],
+  "Drone Service": ["DJI"]
 };
 
 
@@ -55,6 +53,7 @@ const Collection = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedType, setSelectedType] = useState(null);
   const [selectedBrand, setSelectedBrand] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const placeholderImage = "/images/placeholder.png";
 
@@ -62,7 +61,7 @@ const Collection = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const { data } = await axios.get("http://localhost:5000/api/products");
+        const data = await apiClient.get("/products");
         console.log("Fetched products:", data);
         setProducts(data);
       } catch (err) {
@@ -76,25 +75,31 @@ const Collection = () => {
 
   // Filtered products memoized for performance
   const filteredProducts = useMemo(() => {
+    let result = products;
+
+    if (searchQuery) {
+      result = result.filter((p) =>
+        p.name?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
     if (selectedCategory) {
-      return products.filter(
+      result = result.filter(
         (p) => p.category?.toLowerCase() === selectedCategory.toLowerCase()
       );
-    }
-    if (selectedType && selectedBrand) {
-      return products.filter(
-        (p) =>
-          p.type?.toLowerCase() === selectedType.toLowerCase() &&
-          p.brand?.toLowerCase() === selectedBrand.toLowerCase()
-      );
-    }
-    if (selectedType) {
-      return products.filter(
+    } else if (selectedType) {
+      result = result.filter(
         (p) => p.type?.toLowerCase() === selectedType.toLowerCase()
       );
+      if (selectedBrand) {
+        result = result.filter(
+          (p) => p.brand?.toLowerCase() === selectedBrand.toLowerCase()
+        );
+      }
     }
-    return [];
-  }, [products, selectedCategory, selectedType, selectedBrand]);
+
+    return result;
+  }, [products, selectedCategory, selectedType, selectedBrand, searchQuery]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
@@ -109,6 +114,22 @@ const Collection = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-8 sm:px-6 lg:px-8 py-8">
+        {/* Search Bar */}
+        <div className="relative max-w-xl mx-auto mb-12">
+          <input
+            type="text"
+            placeholder="Search equipment by name... (e.g. Sony A7M3)"
+            className="w-full px-6 py-4 rounded-full border-2 border-gray-200 focus:border-[#1A97A9] outline-none shadow-sm transition-all pr-12 text-lg"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+
         {/* Browse by Type */}
         <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
             Browse by Type
@@ -187,41 +208,69 @@ const Collection = () => {
         </div>
 
         {/* Clear Filters */}
-        {selectedCategory && (
-          <div className="text-center mb-6">
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className="text-sm text-[#1A97A9] hover:underline"
-            >
-              Clear Filter
-            </button>
-          </div>
-        )}
-        {selectedType && (
-          <div className="text-center mb-6">
-            <button
-              onClick={() => {
-                setSelectedType(null);
-                setSelectedBrand(null);
-              }}
-              className="text-sm text-[#1A97A9] hover:underline"
-            >
-              Clear Equipment Type
-            </button>
+        {(selectedCategory || selectedType || searchQuery) && (
+          <div className="text-center mb-6 flex justify-center gap-4">
+            {selectedCategory && (
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className="text-sm text-[#1A97A9] hover:underline"
+              >
+                Clear Category
+              </button>
+            )}
+            {selectedType && (
+              <button
+                onClick={() => {
+                  setSelectedType(null);
+                  setSelectedBrand(null);
+                }}
+                className="text-sm text-[#1A97A9] hover:underline"
+              >
+                Clear Type
+              </button>
+            )}
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="text-sm text-[#1A97A9] hover:underline"
+              >
+                Clear Search
+              </button>
+            )}
+            {(selectedCategory || selectedType || searchQuery) && (
+              <button
+                onClick={() => {
+                  setSelectedCategory(null);
+                  setSelectedType(null);
+                  setSelectedBrand(null);
+                  setSearchQuery("");
+                }}
+                className="text-sm font-bold text-red-500 hover:underline"
+              >
+                Clear All
+              </button>
+            )}
           </div>
         )}
 
         {/* Filtered Products */}
-        {(selectedCategory || selectedType) && (
+        {(selectedCategory || selectedType || searchQuery) && (
           <>
             <h3 className="text-xl font-semibold text-gray-800 mb-4 text-center">
-              Showing products for:{" "}
-              <span className="text-[#1A97A9]">
-                {selectedCategory
-                  ? selectedCategory
-                  : equipmentTypes.find((t) => t.type === selectedType)?.name}
-                {selectedBrand ? ` - ${selectedBrand}` : ""}
-              </span>
+              {searchQuery && !selectedCategory && !selectedType ? (
+                <>Search results for: <span className="text-[#1A97A9]">"{searchQuery}"</span></>
+              ) : (
+                <>
+                  Showing products for:{" "}
+                  <span className="text-[#1A97A9]">
+                    {selectedCategory
+                      ? selectedCategory
+                      : equipmentTypes.find((t) => t.type === selectedType)?.name}
+                    {selectedBrand ? ` - ${selectedBrand}` : ""}
+                    {searchQuery ? ` (Search: ${searchQuery})` : ""}
+                  </span>
+                </>
+              )}
             </h3>
 
             {loading ? (

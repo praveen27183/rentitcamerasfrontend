@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { apiClient } from '../../utils/apiClient';
 import Sidebar from './layout/Sidebar';
 import Dashboard from './Dashboard/Dashboard';
 import Inventory from './Inventory/Inventory';
@@ -10,7 +10,6 @@ import Categories from './Inventory/Categories';
 import Orders from './Orders/Orders';
 import Customers from './Customers/Customers';
 import Analytics from './Analytics/Analytics';
-
 
 // Reusable loading spinner
 const LoadingScreen = () => (
@@ -39,13 +38,13 @@ const useAdminData = () => {
         setLoading(true);
         setError(null);
 
-        const [productsRes, categoriesRes] = await Promise.all([
-          axios.get('/api/products').then(res => res.data || []),
-          axios.get('/api/categories').then(res => res.data || [])
+        const [productsData, categoriesData] = await Promise.all([
+          apiClient.get('/products'),
+          apiClient.get('/categories')
         ]);
 
-        setProducts(Array.isArray(productsRes) ? productsRes : []);
-        setCategories(Array.isArray(categoriesRes) ? categoriesRes : []);
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
       } catch (err) {
         console.error('Error fetching admin data:', err);
         setError('Failed to load dashboard data. Please try again later.');

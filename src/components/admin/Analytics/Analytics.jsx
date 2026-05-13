@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import PropTypes from 'prop-types';
 import { 
   OrdersPerMonthBar, 
@@ -10,6 +9,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from './ui/button';
+import { apiClient } from '../../../utils/apiClient';
 
 const Analytics = ({ 
   orders: propOrders = [], 
@@ -30,36 +30,23 @@ const Analytics = ({
       setLoading(true);
       setError(null);
 
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No authentication token found. Please log in again.');
-      }
-
-      const config = {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        timeout: 10000 // 10 second timeout
-      };
-
       console.log('Fetching analytics data...');
       
-      const [ordersRes, customersRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/admin/orders', config)
-          .then(res => {
-            console.log('Orders response:', res.data);
-            return res;
+      const [ordersData, customersData] = await Promise.all([
+        apiClient.get('/admin/orders')
+          .then(data => {
+            console.log('Orders response:', data);
+            return data;
           })
           .catch(err => {
             console.error('Error fetching orders:', err);
             throw err;
           }),
           
-        axios.get('http://localhost:5000/api/admin/customers', config)
-          .then(res => {
-            console.log('Customers response:', res.data);
-            return res;
+        apiClient.get('/admin/customers')
+          .then(data => {
+            console.log('Customers response:', data);
+            return data;
           })
           .catch(err => {
             console.error('Error fetching customers:', err);
@@ -67,41 +54,25 @@ const Analytics = ({
           })
       ]);
 
-      const ordersData = Array.isArray(ordersRes?.data) ? ordersRes.data : [];
-      const customersData = Array.isArray(customersRes?.data) ? customersRes.data : [];
-
       console.log('Orders data:', ordersData);
       console.log('Customers data:', customersData);
 
-      if (ordersData.length === 0 && customersData.length === 0) {
+      if ((!ordersData || ordersData.length === 0) && (!customersData || customersData.length === 0)) {
         console.warn('Both orders and customers data are empty');
       }
 
-      computeAnalytics(ordersData, customersData);
+      computeAnalytics(ordersData || [], customersData || []);
       setLastUpdated(new Date());
       
     } catch (error) {
       console.error('Fetch error:', error);
       
-      let errorMessage = 'Failed to fetch data. Please try again.';
+      let errorMessage = error.message || 'Failed to fetch data. Please try again.';
       
-      if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-        
-        if (error.response.status === 401) {
-          localStorage.removeItem('token');
-          window.location.href = '/admin/login';
-          return;
-        }
-        errorMessage = error.response.data?.message || errorMessage;
-      } else if (error.request) {
-        console.error('No response received:', error.request);
-        errorMessage = 'No response from server. Please check your connection.';
-      } else if (error.message.includes('timeout')) {
-        errorMessage = 'Request timed out. Please try again.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (error.status === 401) {
+        localStorage.removeItem('token');
+        window.location.href = '/admin/login';
+        return;
       }
       
       setError(errorMessage);

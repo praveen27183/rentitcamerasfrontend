@@ -4,20 +4,34 @@ import {
   ChevronUp, Truck, CreditCard, Package as PackageIcon, RefreshCw, Plus, 
   Phone, User, Calendar, MapPin, Mail, ChevronRight, XCircle as XIcon
 } from 'lucide-react';
+import { apiClient } from '../../../utils/apiClient';
 
 const OrderCard = ({ order, onUpdateStatus }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getStatusBadge = (status) => {
     const statusClasses = {
-     
+      pending: 'bg-amber-100 text-amber-700 border-amber-200',
+      processing: 'bg-blue-100 text-blue-700 border-blue-200',
+      shipped: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+      delivered: 'bg-green-100 text-green-700 border-green-200',
+      cancelled: 'bg-red-100 text-red-700 border-red-200',
     };
     
     const statusIcons = {
-      
+      pending: <Clock className="w-3.5 h-3.5 mr-1" />,
+      processing: <RefreshCw className="w-3.5 h-3.5 mr-1" />,
+      shipped: <Truck className="w-3.5 h-3.5 mr-1" />,
+      delivered: <CheckCircle className="w-3.5 h-3.5 mr-1" />,
+      cancelled: <XCircle className="w-3.5 h-3.5 mr-1" />,
     };
-    
-    
+
+    return (
+      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border flex items-center ${statusClasses[status] || 'bg-gray-100 text-gray-700'}`}>
+        {statusIcons[status]}
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    );
   };
 
   return (
@@ -89,7 +103,7 @@ const OrderCard = ({ order, onUpdateStatus }) => {
                     </div>
                   </div>
                 </div>
-                </div>
+              </div>
             </div>
           </div>
         )}
@@ -116,32 +130,8 @@ const Orders = () => {
       try {
         setLoading(true);
         
-        // Get the token from localStorage
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No authentication token found');
-        }
-        
-        // Fetch products from API with authentication
-        const response = await fetch('http://localhost:5000/api/admin/products', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          // If unauthorized, remove the invalid token and reload
-          if (response.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
-            return;
-          }
-          throw new Error('Failed to fetch products');
-        }
-        
-        const products = await response.json();
+        // Fetch products from API with authentication using apiClient
+        const products = await apiClient.get('/admin/products');
         
         // Transform products into orders (for demo purposes)
         const mockOrders = products.slice(0, 10).map((product, index) => {

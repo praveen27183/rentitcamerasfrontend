@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, Menu, X, Camera, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logo from '../asset/Rentit logo (1).png';
-import axios from 'axios';
+import { apiClient } from '../utils/apiClient';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -39,8 +39,8 @@ const Header = () => {
     setIsSearching(true);
     const timeout = setTimeout(async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/products');
-        const products = res.data || [];
+        const data = await apiClient.get('/products');
+        const products = data || [];
         const filtered = products.filter(product =>
           product.name && product.name.toLowerCase().includes(searchQuery.toLowerCase())
         );

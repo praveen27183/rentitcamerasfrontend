@@ -68,6 +68,23 @@ const RentModal = ({
       `Name: ${formData.name}\n` +
       `Phone: ${formData.phone}\n\n` +
       `*Note*: Payment integration is coming soon. For now, we'll confirm your booking via WhatsApp and arrange payment details.`;
+
+    // Prepare the order data for MongoDB
+    const orderData = {
+      product: product._id,
+      rentalStart: formData.pickupDate,
+      rentalEnd: formData.returnDate,
+      totalPrice: totalPrice,
+      customerDetails: {
+        name: formData.name,
+        phone: formData.phone
+      }
+    };
+
+    // Call the parent component's confirm handler (which saves to DB)
+    if (onRentConfirm) {
+      onRentConfirm(orderData);
+    }
     
     // Open WhatsApp with the booking details
     window.open(`https://wa.me/919940423791?text=${encodeURIComponent(bookingDetails)}`, '_blank');

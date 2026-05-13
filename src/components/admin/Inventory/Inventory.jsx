@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Grid3X3, List as ListIcon, X, Package, IndianRupee, DollarSign, Tag } from 'lucide-react';
-import axios from 'axios';
+import { apiClient } from '../../../utils/apiClient';
 
 const Inventory = () => {
   const [products, setProducts] = useState([]);
@@ -134,11 +134,8 @@ const Inventory = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/admin/products', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setProducts(response.data);
+      const data = await apiClient.get('/admin/products');
+      setProducts(data);
     } catch (error) {
       console.error('Error fetching products:', error);
       // Fallback to sample data if API fails
@@ -163,10 +160,7 @@ const Inventory = () => {
   const handleAddProduct = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/admin/products', formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.post('/admin/products', formData);
       setShowAddModal(false);
       setFormData({ name: '', description: '', price: '', category: '', brand: '', imageUrl: '', stock: '' });
       fetchProducts();
@@ -178,10 +172,7 @@ const Inventory = () => {
   const handleEditProduct = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5000/api/admin/products/${editingProduct._id}`, formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await apiClient.put(`/admin/products/${editingProduct._id}`, formData);
       setShowEditModal(false);
       setEditingProduct(null);
       setFormData({ name: '', description: '', price: '', category: '', brand: '', imageUrl: '', stock: '' });
@@ -194,10 +185,7 @@ const Inventory = () => {
   const handleDeleteProduct = async (productId) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
-        const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:5000/api/admin/products/${productId}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await apiClient.delete(`/admin/products/${productId}`);
         fetchProducts();
       } catch (error) {
         console.error('Error deleting product:', error);
