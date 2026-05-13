@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Search, Grid3X3, List as ListIcon, X, Package, IndianRupee, DollarSign, Tag } from 'lucide-react';
 import { apiClient } from '../../../utils/apiClient';
 
-const Inventory = () => {
+const AddProduct = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -642,4 +642,4 @@ const Inventory = () => {
   );
 };
 
-export default Inventory;
+export default AddProduct;
