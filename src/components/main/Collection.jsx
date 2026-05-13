@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { apiClient } from "../../utils/apiClient";
 
 // Category and type constants
@@ -50,8 +50,9 @@ const Collection = () => {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedType, setSelectedType] = useState(null);
+  const [selectedType, setSelectedType] = useState(searchParams.get("type") || null);
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -254,12 +255,11 @@ const Collection = () => {
         )}
 
         {/* Filtered Products */}
-        {(selectedCategory || selectedType || searchQuery) && (
-          <>
+        <div className="mt-8">
             <h3 className="text-xl font-semibold text-gray-800 mb-4 text-center">
               {searchQuery && !selectedCategory && !selectedType ? (
                 <>Search results for: <span className="text-[#1A97A9]">"{searchQuery}"</span></>
-              ) : (
+              ) : selectedCategory || selectedType ? (
                 <>
                   Showing products for:{" "}
                   <span className="text-[#1A97A9]">
@@ -267,9 +267,10 @@ const Collection = () => {
                       ? selectedCategory
                       : equipmentTypes.find((t) => t.type === selectedType)?.name}
                     {selectedBrand ? ` - ${selectedBrand}` : ""}
-                    {searchQuery ? ` (Search: ${searchQuery})` : ""}
                   </span>
                 </>
+              ) : (
+                <>All Equipment</>
               )}
             </h3>
 
@@ -316,8 +317,7 @@ const Collection = () => {
                 No products found for this selection.
               </div>
             )}
-          </>
-        )}
+        </div>
       </main>
     </div>
   );
